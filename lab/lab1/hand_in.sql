@@ -67,11 +67,12 @@ select borrow.book_ID ,book.name ,borrow.borrow_Date FROM borrow ,book ,reader w
 
 #查询没有借过书也没有预约过图书的读者
 select distinct reader.ID , reader.name 
-	FROM reader,borrow , reserve
-    WHERE reader.ID not IN (select distinct reader_ID FROM borrow) and 
-   reader.ID not IN (select distinct reader_ID FROM reserve);
+	FROM reader
+    left join borrow on reader.ID = borrow.reader_ID
+    left join reserve on reader.ID = reserve.reader_ID
+    WHERE borrow.reader_ID is null and reserve.reader_ID is null;
 
-#查询最多借阅的读者
+#查询最多借阅的作者
 select author from book group by author order by sum(borrow_Times) desc limit 1;
 
 #查询目前借阅未还的书名中包含“MySQL”的的图书号和书名
