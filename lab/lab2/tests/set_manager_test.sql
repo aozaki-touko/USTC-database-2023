@@ -1,0 +1,1 @@
+call set_manager('bank1','技术部',)
