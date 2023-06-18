@@ -84,14 +84,17 @@ def login():
 
             name = request.form.get('name')
             key = request.form.get('password')
-            ret = 100
-            cursor.callproc('create_user', (name, key, ret))
-            print(ret)
-            if ret != 0:
+            ret1 = 0
+            uSql = f"call create_user('{name}','{key}',@u_state)"
+            cursor.execute(uSql)
+            cursor.execute('select @u_state')
+            result3 = cursor.fetchone()
+            if result3:
+                ret1 = result3[0]
+            if ret1 == 1:
                 error_title = '注册错误'
                 error_message = '用户名重复'
                 return render_template('404.html', error_title=error_title, error_message=error_message)
-            return render_template('login.html')
 
         elif request.form.get('type') == 'login':
 
@@ -350,9 +353,15 @@ def client():
             employeeID = request.form.get('staffId')
             stype = request.form.get('Type')
             print(stype)
-            sql = f"insert into connection(employee_id, client_id, service) VALUES ('{employeeID}','{clientID}',{int(stype)})"
-            cursor.execute(sql)
-            db2.commit()
+            try:
+                sql = f"insert into connection(employee_id, client_id, service) VALUES ('{employeeID}','{clientID}',{int(stype)})"
+                cursor.execute(sql)
+                db2.commit()
+            except Exception as e:
+                error_title = '新建服务关系错误'
+                error_message = '客户id或员工id不存在'
+                # 需要回滚
+                return render_template('404.html', error_title=error_title, error_message=error_message)
 
             _ = cursor.execute(sql2)
             result2 = cursor.fetchall()
@@ -511,16 +520,21 @@ def employee():
             ManagerID = request.form.get('ManagerId')
 
             # 更新功能不允许修改bank名和department id
-            ret = 0
+            sSql = f"select * from manager_table where manager_id = '{ManagerID}'"
+            cursor.execute(sSql)
+            ret = len(cursor.fetchall()) > 0
 
-            if not ret:
+            if ret == 0:
                 sqlUpdate = f"update manager_table set manager_id = '{ManagerID}' where department_id = {oldID2} and bank_name = '{oldID1}'"
                 cursor.execute(sqlUpdate)
                 sqlUpdate = f"update department set type = '{departType}',name = '{departName}' where department_id = {oldID2} and bank_name = '{oldID1}'"
                 cursor.execute(sqlUpdate)
 
                 db2.commit()
-
+            else:
+                error_title = '修改错误'
+                error_message = '此人已经是其他部门经理'
+                return render_template('404.html', error_title=error_title, error_message=error_message)
 
 
         elif request.form.get('type') == 'delete1':
