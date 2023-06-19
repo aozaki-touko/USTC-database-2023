@@ -905,7 +905,7 @@ def account():
 
             cursor.execute(qSql)
             flag = len(cursor.fetchall()) == 0
-            if flag != 0:
+            if flag == 0:
                 error_title = '删除错误'
                 error_message = '不可删除没有还清的贷款'
                 return render_template('404.html', error_title=error_title, error_message=error_message)
